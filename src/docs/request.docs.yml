@@ -1,0 +1,16 @@
+components:
+  schemas:
+    SampleRequest:
+      type: object
+      description: An example request object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        attributes:
+          type: object

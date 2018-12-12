@@ -1,0 +1,51 @@
+paths:
+  /{id}:
+    get:
+      tags:
+        - Get API
+      summary: An example API that returns the request ID and query data
+      description: >
+        Some description.
+      parameters:
+        - name: id
+          description: Specify a ID for retrieval
+          required: true
+          in: path
+          schema:
+            type: integer
+        - name: message
+          description: Specify the return message
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Some object retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SampleResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    SampleResponse:
+      type: object
+      description: Sample response object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+            attributes:
+              type: object
+              properties:
+                message:
+                  type: string

@@ -1,0 +1,139 @@
+# See here for reference: https://serverless.com/framework/docs/providers/aws/guide/serverless.yml/
+
+service: $${self:custom.name}
+
+plugins:
+  - serverless-webpack
+  - serverless-plugin-tracing
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: $${self:custom.stage}
+  region: $${self:custom.region}
+  profile: $${self:custom.profile}
+  timeout: 30
+  memorySize: 256
+  # This syntax requires serverless variables to defined by $${} so that we can use AWS psudeo variables
+  variableSyntax: "\\$\\${([ ~:a-zA-Z0-9._\\'\",\\-\\/\\(\\)]+?)}"
+  apiKeys:
+    - $${self:custom.stagedName}-key
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - Fn::Sub: 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiKey}'
+        - Fn::Sub: 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiUrl}'
+    - Effect: 'Allow' # xray permissions (required)
+      Action:
+        - 'xray:PutTraceSegments'
+        - 'xray:PutTelemetryRecords'
+      Resource:
+        - '*'
+    # Add additional permissions for all lambdas here
+  environment:
+    SERVICE_HOST: $${self:custom.domain}
+    SERVICE_NAME: $${self:custom.name}
+    # Add additional env variable for all lambdas here
+
+package:
+  individually: true
+
+functions: $${self:custom.functions.$${self:custom.stage}}
+
+custom:
+  # Change the name to match your service name
+  name: $${opt:service-name, env:SERVICE_NAME, 'micro-lambda'}
+  domain: $${opt:service-host, env:SERVICE_HOST, 'api.your-domain.com'}
+  stage: $${opt:stage, env:STAGE, 'dev'}
+  stagedName: $${self:custom.name}-$${self:custom.stage}
+  region: $${opt:region, env:AWS_REGION, 'ap-southeast-2'}
+  profile: $${opt:profile, env:AWS_PROFILE, self:custom.stage}
+  tracing: false # AWS X-Ray disabled by default
+  webpack:
+    includeModules:
+      forceExclude: [aws-sdk]
+    webpackConfig: $${self:custom.webpack.webpackConfigMap.$${self:custom.stage}}
+    webpackConfigMap:
+      dev: ./internals/webpack/webpack.dev.config.js
+      stg: ./internals/webpack/webpack.dev.config.js
+      prd: ./internals/webpack/webpack.prod.config.js
+  functions:
+    # API lambda function
+    api: &api
+      handler: src/api-lambda.handler
+      tracing: true
+      events:
+        # Add additional API endpoints here
+        - http:
+            method: GET
+            path: /{id}
+            private: true
+            request:
+              parameters:
+                path:
+                  id: true
+                querystrings:
+                  message: false
+      environment:
+        # Set the parameter store values
+        SSM_API_URL: { Ref: ApiUrl }
+        SSM_API_KEY: { Ref: ApiKey }
+    # API docs lamda function
+    api-docs: &api-docs
+      handler: src/api-docs-lambda.handler
+      role: ApiDocsExecutionRole
+      events:
+        - http: GET /docs
+        - http: GET /docs/{proxy+}
+    dev:
+      api: *api
+      api-docs: *api-docs
+    stg:
+      api: *api
+      api-docs: *api-docs
+    prd:
+      api: *api
+      # We don't need to deploy docs to production
+
+resources:
+  Parameters:
+    ApiKey:
+      Type: AWS::SSM::Parameter::Name
+      Default: /$${self:custom.stage}/api/api_key
+    ApiUrl:
+      Type: AWS::SSM::Parameter::Name
+      Default: /$${self:custom.stage}/api/api_url
+      # Remove the paremters above and add your parameter store values here
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: $${self:custom.stagedName}
+    # Uncomment the next resource for custom-domain mapping in API Gateway
+    # ApiGatewayMapping:
+    #   Type: AWS::ApiGateway::BasePathMapping
+    #   DependsOn: ApiGatewayApiKey1
+    #   Properties:
+    #     BasePath: $${self:custom.name}
+    #     DomainName: $${self:custom.domain}
+    #     RestApiId:
+    #       Ref: ApiGatewayRestApi
+    #     Stage: $${self:custom.stage}
+    # IAM execution role isolation for API docs lambda
+    ApiDocsExecutionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: $${self:custom.stagedName}-api-docs-$${self:custom.region}-lambdaRole
+        AssumeRolePolicyDocument:
+          Version: '2008-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+    # Add additional AWS resources here

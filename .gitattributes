@@ -1,0 +1,2 @@
+# Ignore diffs
+package-lock.json -diff
