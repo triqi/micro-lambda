@@ -2,11 +2,11 @@
 aws_access_key_id=$AWS_ACCESS_KEY_ID
 aws_secret_access_key=$AWS_SECRET_ACCESS_KEY
 [dev]
-role_arn=arn:aws:iam::<ACCOUNT-ID>:role/<CI-CD-ROLE>
+role_arn=arn:aws:iam::$AWS_ACCOUNT_ID:role/<CI-CD-ROLE>
 source_profile=default
 [stg]
-role_arn=arn:aws:iam::<ACCOUNT-ID>:role/<CI-CD-ROLE>
+role_arn=arn:aws:iam::$AWS_ACCOUNT_ID:role/<CI-CD-ROLE>
 source_profile=default
 [prd]
-role_arn=arn:aws:iam::<ACCOUNT-ID>:role/<CI-CD-ROLE>
+role_arn=arn:aws:iam::$AWS_ACCOUNT_ID:role/<CI-CD-ROLE>
 source_profile=default
