@@ -11,4 +11,5 @@ const api = new Api()
 // Creates a AWS serverless express server
 const server = awsServerlessExpress.createServer(api.express);
 
-exports.handler = (event, context) => awsServerlessExpress.proxy(server, event, context);
+// eslint-disable-next-line import/prefer-default-export
+export const handler = (event, context) => awsServerlessExpress.proxy(server, event, context);
