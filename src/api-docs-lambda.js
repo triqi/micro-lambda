@@ -4,4 +4,5 @@ import apiDocs from './api-docs';
 
 const server = awsServerlessExpress.createServer(apiDocs);
 
-exports.handler = (event, context) => awsServerlessExpress.proxy(server, event, context);
+// eslint-disable-next-line import/prefer-default-export
+export const handler = (event, context) => awsServerlessExpress.proxy(server, event, context);

@@ -6,7 +6,7 @@
   "functions": 85,
   "branches": 85,
   "include": ["src"],
-  "require": ["babel-register"],
+  "require": ["@babel/register"],
   "cache": true,
   "sourceMap": false,
   "instrument": false,
