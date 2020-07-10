@@ -45,6 +45,8 @@
     "rimraf": "^2.6.2",
     "serverless": "^1.23.0",
     "serverless-webpack": "^5.1.0",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-plugin-tracing": "^2.0.0",
     "sinon": "^7.1.1",
     "sinon-chai": "^3.0.0",
     "supertest": "^3.1.0",
@@ -62,7 +64,6 @@
     "got": "^11.5.0",
     "lodash": "^4.17.5",
     "moment": "^2.18.1",
-    "serverless-plugin-tracing": "^2.0.0",
     "swagger-jsdoc": "^3.2.6",
     "swagger-ui-dist": "^3.17.2",
     "uuid": "^3.1.0"
