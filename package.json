@@ -13,7 +13,7 @@
     "start": "nodemon -e js,json,yml src/api-local.js --exec \"node --require dotenv/config --require @babel/register\"",
     "test": "npm run build:lint && npm run test:unit",
     "test:unit": "cross-env NODE_ENV=test nyc mocha --recursive test/unit",
-    "test:integration": "mocha --require babel-register --recursive test/integration -r dotenv/config"
+    "test:integration": "mocha --require @babel/register --recursive test/integration -r dotenv/config"
   },
   "author": "Tri Q Tran <triqi@users.noreply.github.com>",
   "license": "MIT",
@@ -59,10 +59,9 @@
     "dynamodb-update-expression": "^0.1.21",
     "express": "^4.16.1",
     "glob": "^7.1.3",
+    "got": "^11.5.0",
     "lodash": "^4.17.5",
     "moment": "^2.18.1",
-    "request": "^2.83.0",
-    "request-promise-native": "^1.0.5",
     "serverless-plugin-tracing": "^2.0.0",
     "swagger-jsdoc": "^3.2.6",
     "swagger-ui-dist": "^3.17.2",
