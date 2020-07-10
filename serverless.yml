@@ -1,30 +1,29 @@
 # See here for reference: https://serverless.com/framework/docs/providers/aws/guide/serverless.yml/
 
-service: $${self:custom.name}
+service: ${self:custom.name}
 
 plugins:
   - serverless-webpack
   - serverless-plugin-tracing
+  - serverless-pseudo-parameters
 
 provider:
   name: aws
-  runtime: nodejs8.10
-  stage: $${self:custom.stage}
-  region: $${self:custom.region}
-  profile: $${self:custom.profile}
+  runtime: nodejs12.x
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  profile: ${self:custom.profile}
   timeout: 30
   memorySize: 256
-  # This syntax requires serverless variables to defined by $${} so that we can use AWS psudeo variables
-  variableSyntax: "\\$\\${([ ~:a-zA-Z0-9._\\'\",\\-\\/\\(\\)]+?)}"
   apiKeys:
-    - $${self:custom.stagedName}-key
+    - ${self:custom.stagedName}-key
   iamRoleStatements:
     - Effect: Allow
       Action:
         - ssm:GetParameter
       Resource:
-        - Fn::Sub: 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiKey}'
-        - Fn::Sub: 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ApiUrl}'
+        - Fn::Sub: 'arn:aws:ssm:#{AWS::Region}:#{AWS::AccountId}:parameter#{ApiKey}'
+        - Fn::Sub: 'arn:aws:ssm:#{AWS::Region}:#{AWS::AccountId}:parameter#{ApiUrl}'
     - Effect: 'Allow' # xray permissions (required)
       Action:
         - 'xray:PutTraceSegments'
@@ -33,28 +32,29 @@ provider:
         - '*'
     # Add additional permissions for all lambdas here
   environment:
-    SERVICE_HOST: $${self:custom.domain}
-    SERVICE_NAME: $${self:custom.name}
+    SERVICE_HOST: ${self:custom.domain}
+    SERVICE_NAME: ${self:custom.name}
     # Add additional env variable for all lambdas here
 
 package:
   individually: true
 
-functions: $${self:custom.functions.$${self:custom.stage}}
+functions: ${self:custom.functions.${self:custom.stage}}
 
 custom:
   # Change the name to match your service name
-  name: $${opt:service-name, env:SERVICE_NAME, 'micro-lambda'}
-  domain: $${opt:service-host, env:SERVICE_HOST, 'api.your-domain.com'}
-  stage: $${opt:stage, env:STAGE, 'dev'}
-  stagedName: $${self:custom.name}-$${self:custom.stage}
-  region: $${opt:region, env:AWS_REGION, 'ap-southeast-2'}
-  profile: $${opt:profile, env:AWS_PROFILE, self:custom.stage}
+  name: ${opt:service-name, env:SERVICE_NAME, 'micro-lambda'}
+  # Change the domain to match your domain
+  domain: ${opt:service-host, env:SERVICE_HOST, 'api.your-domain.com}
+  stage: ${opt:stage, env:STAGE, 'dev'}
+  stagedName: ${self:custom.name}-${self:custom.stage}
+  region: ${opt:region, env:AWS_REGION, 'ap-southeast-2'}
+  profile: ${opt:profile, env:AWS_PROFILE, self:custom.stage}
   tracing: false # AWS X-Ray disabled by default
   webpack:
     includeModules:
       forceExclude: [aws-sdk]
-    webpackConfig: $${self:custom.webpack.webpackConfigMap.$${self:custom.stage}}
+    webpackConfig: ${self:custom.webpack.webpackConfigMap.${self:custom.stage}}
     webpackConfigMap:
       dev: ./internals/webpack/webpack.dev.config.js
       stg: ./internals/webpack/webpack.dev.config.js
@@ -101,31 +101,31 @@ resources:
   Parameters:
     ApiKey:
       Type: AWS::SSM::Parameter::Name
-      Default: /$${self:custom.stage}/api/api_key
+      Default: /${self:custom.stage}/api/api_key
     ApiUrl:
       Type: AWS::SSM::Parameter::Name
-      Default: /$${self:custom.stage}/api/api_url
+      Default: /${self:custom.stage}/api/api_url
       # Remove the paremters above and add your parameter store values here
   Resources:
     ApiGatewayRestApi:
       Type: AWS::ApiGateway::RestApi
       Properties:
-        Name: $${self:custom.stagedName}
+        Name: ${self:custom.stagedName}
     # Uncomment the next resource for custom-domain mapping in API Gateway
-    # ApiGatewayMapping:
-    #   Type: AWS::ApiGateway::BasePathMapping
-    #   DependsOn: ApiGatewayApiKey1
-    #   Properties:
-    #     BasePath: $${self:custom.name}
-    #     DomainName: $${self:custom.domain}
-    #     RestApiId:
-    #       Ref: ApiGatewayRestApi
-    #     Stage: $${self:custom.stage}
+    ApiGatewayMapping:
+      Type: AWS::ApiGateway::BasePathMapping
+      DependsOn: ApiGatewayApiKey1
+      Properties:
+        BasePath: ${self:custom.name}
+        DomainName: ${self:custom.domain}
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Stage: ${self:custom.stage}
     # IAM execution role isolation for API docs lambda
     ApiDocsExecutionRole:
       Type: AWS::IAM::Role
       Properties:
-        RoleName: $${self:custom.stagedName}-api-docs-$${self:custom.region}-lambdaRole
+        RoleName: ${self:custom.stagedName}-api-docs-${self:custom.region}-lambdaRole
         AssumeRolePolicyDocument:
           Version: '2008-10-17'
           Statement:
